@@ -1,0 +1,1079 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<title>TRS Email Validator</title>
+<style>
+:root{
+  --bg:#0f1117;--bg2:#1a1d27;--bg3:#22263a;--bg4:#2a2f45;
+  --b:rgba(255,255,255,0.07);--b2:rgba(255,255,255,0.14);
+  --tx:#e8eaf0;--tx2:#8b92a8;--tx3:#555d75;
+  --ac:#4f7cff;--ac2:#3a5ecc;
+  --gr:#22c98a;--gr2:rgba(34,201,138,0.12);
+  --am:#f5a623;--am2:rgba(245,166,35,0.12);
+  --rd:#ff4d6a;--rd2:rgba(255,77,106,0.12);
+  --r:10px;--rs:6px
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text',system-ui,sans-serif;
+  background:var(--bg);color:var(--tx);min-height:100vh;font-size:14px;line-height:1.5}
+
+/* TOPBAR */
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:12px 22px;
+  background:var(--bg2);border-bottom:1px solid var(--b);gap:10px;flex-wrap:wrap;
+  position:sticky;top:0;z-index:100}
+.logo{font-size:15px;font-weight:700;letter-spacing:-.2px;white-space:nowrap}
+.logo span{color:var(--ac)}
+.topbar-mid{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.mode-badge{display:flex;align-items:center;gap:6px;padding:4px 11px;border-radius:20px;
+  border:1px solid var(--b2);font-size:11px;font-weight:500;color:var(--tx2);white-space:nowrap}
+.mode-badge .dot{width:6px;height:6px;border-radius:50%;background:var(--tx3);flex-shrink:0}
+.mode-badge.browser-mode{border-color:rgba(245,166,35,.4);color:var(--am)}
+.mode-badge.browser-mode .dot{background:var(--am)}
+.mode-badge.full-mode{border-color:rgba(34,201,138,.4);color:var(--gr)}
+.mode-badge.full-mode .dot{background:var(--gr);box-shadow:0 0 5px var(--gr)}
+.topbar-right{display:flex;gap:6px}
+.icon-btn{display:flex;align-items:center;gap:5px;padding:6px 12px;border-radius:var(--rs);
+  border:1px solid var(--b2);background:none;color:var(--tx2);cursor:pointer;
+  font-size:12px;font-weight:500;transition:.15s;white-space:nowrap}
+.icon-btn:hover{background:var(--bg3);color:var(--tx)}
+.icon-btn.active{border-color:var(--ac);color:var(--ac)}
+
+/* TABS */
+.tabs{display:flex;padding:0 22px;background:var(--bg2);border-bottom:1px solid var(--b);
+  overflow-x:auto;gap:0}
+.tab{padding:10px 16px;font-size:13px;font-weight:500;color:var(--tx2);background:none;
+  border:none;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;
+  transition:.15s;white-space:nowrap}
+.tab:hover{color:var(--tx)}
+.tab.active{color:var(--ac);border-bottom-color:var(--ac)}
+.tab:disabled{opacity:.4;cursor:not-allowed}
+
+/* MAIN */
+.main{padding:24px 22px;max-width:980px;margin:0 auto;width:100%}
+.section{display:none}.section.active{display:block}
+
+/* CARDS */
+.card{background:var(--bg2);border:1px solid var(--b);border-radius:var(--r);
+  padding:20px 22px;margin-bottom:14px}
+.clabel{font-size:11px;font-weight:600;color:var(--tx3);text-transform:uppercase;
+  letter-spacing:.07em;margin-bottom:12px}
+
+/* NOTICES */
+.notice{display:flex;gap:10px;border-radius:var(--rs);padding:12px 15px;
+  font-size:12px;line-height:1.6;margin-bottom:14px;align-items:flex-start}
+.notice svg{flex-shrink:0;margin-top:1px}
+.notice.info{background:rgba(79,124,255,.07);border:1px solid rgba(79,124,255,.2);color:#7fa3ff}
+.notice.warn{background:var(--am2);border:1px solid rgba(245,166,35,.25);color:var(--am)}
+.notice.success{background:var(--gr2);border:1px solid rgba(34,201,138,.25);color:var(--gr)}
+.notice.error{background:var(--rd2);border:1px solid rgba(255,77,106,.25);color:var(--rd)}
+
+/* FORM */
+.field{margin-bottom:13px}
+.label{display:block;font-size:12px;color:var(--tx2);margin-bottom:5px;font-weight:500}
+.label span{color:var(--tx3);font-weight:400;margin-left:4px}
+input,select,textarea{width:100%;background:var(--bg3);border:1px solid var(--b2);
+  border-radius:var(--rs);padding:9px 12px;color:var(--tx);font-size:13px;
+  font-family:inherit;outline:none;transition:.15s}
+input:focus,select:focus,textarea:focus{border-color:var(--ac);box-shadow:0 0 0 3px rgba(79,124,255,.1)}
+input.valid-field{border-color:rgba(34,201,138,.5)}
+input.invalid-field{border-color:rgba(255,77,106,.5)}
+input[type=password]{letter-spacing:.08em}
+select option{background:var(--bg2)}
+textarea{resize:vertical;min-height:90px;font-family:'SF Mono',monospace;font-size:12px;line-height:1.7}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:13px}
+.field-note{font-size:11px;color:var(--tx3);margin-top:4px;line-height:1.5}
+
+/* BUTTONS */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;
+  padding:9px 17px;font-size:13px;font-weight:500;border-radius:var(--rs);
+  border:1px solid var(--b2);background:var(--bg3);color:var(--tx);
+  cursor:pointer;transition:.15s;white-space:nowrap}
+.btn:hover{background:var(--bg4)}
+.btn.primary{background:var(--ac);border-color:var(--ac);color:#fff}
+.btn.primary:hover{background:var(--ac2)}
+.btn.danger{background:var(--rd2);border-color:rgba(255,77,106,.4);color:var(--rd)}
+.btn.sm{padding:6px 12px;font-size:12px}
+.btn:disabled{opacity:.35;cursor:not-allowed}
+.btn-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:13px;align-items:center}
+
+/* DROPZONE */
+.dropzone{border:2px dashed var(--b2);border-radius:var(--r);padding:28px;
+  text-align:center;cursor:pointer;transition:.15s;position:relative;overflow:hidden}
+.dropzone:hover,.dropzone.drag{border-color:var(--ac);background:rgba(79,124,255,.04)}
+.dropzone input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+.dz-icon{font-size:28px;margin-bottom:7px}
+.dz-title{font-size:14px;color:var(--tx2);font-weight:500}
+.dz-sub{font-size:11px;color:var(--tx3);margin-top:4px}
+.or-row{display:flex;align-items:center;gap:10px;margin:13px 0;color:var(--tx3);font-size:12px}
+.or-row::before,.or-row::after{content:'';flex:1;height:1px;background:var(--b)}
+
+/* METRICS */
+.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:15px}
+.metric{background:var(--bg2);border:1px solid var(--b);border-radius:var(--r);
+  padding:15px 12px;text-align:center}
+.mv{font-size:28px;font-weight:700;line-height:1;display:block}
+.ml{font-size:11px;color:var(--tx2);margin-top:4px;display:block}
+.metric.v .mv{color:var(--gr)}.metric.i .mv{color:var(--rd)}.metric.k .mv{color:var(--am)}
+
+/* FILTER PILLS */
+.pills{display:flex;gap:6px;flex-wrap:wrap}
+.pill{padding:5px 13px;border-radius:20px;font-size:12px;font-weight:500;
+  border:1px solid var(--b2);background:none;color:var(--tx2);cursor:pointer;transition:.15s}
+.pill.active{background:var(--ac);border-color:var(--ac);color:#fff}
+.pill:hover:not(.active){background:var(--bg3);color:var(--tx)}
+
+/* TABLE */
+.tbl-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+table{width:100%;border-collapse:collapse;font-size:13px;min-width:540px}
+th{text-align:left;padding:9px 12px;font-size:11px;font-weight:600;color:var(--tx2);
+  text-transform:uppercase;letter-spacing:.06em;border-bottom:1px solid var(--b);
+  background:var(--bg3);white-space:nowrap}
+td{padding:10px 12px;border-bottom:1px solid var(--b);vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:rgba(255,255,255,.015)}
+.em{font-family:'SF Mono',monospace;font-size:11px;max-width:200px;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* BADGES */
+.badge{display:inline-flex;padding:2px 9px;border-radius:10px;font-size:11px;font-weight:600}
+.badge.valid{background:var(--gr2);color:var(--gr)}
+.badge.invalid{background:var(--rd2);color:var(--rd)}
+.badge.risky{background:var(--am2);color:var(--am)}
+.ck{font-size:13px;font-weight:600}
+.ck.y{color:var(--gr)}.ck.n{color:var(--rd)}.ck.u{color:var(--tx3);font-size:11px}
+
+/* PROGRESS */
+.prog-wrap{background:var(--bg3);border-radius:3px;height:5px;overflow:hidden;margin:10px 0}
+.prog-fill{height:100%;background:var(--ac);border-radius:3px;transition:width .25s}
+.prog-meta{display:flex;justify-content:space-between;font-size:12px;color:var(--tx2);margin-bottom:5px}
+
+/* EXPORT ROW */
+.export-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:13px}
+
+/* EMPTY */
+.empty{text-align:center;padding:36px 20px;color:var(--tx3);font-size:13px}
+
+/* ODOO ACTION ITEMS */
+.action-card{background:var(--bg3);border:1px solid var(--b);border-radius:var(--rs);
+  padding:14px 16px;margin-bottom:10px}
+.action-title{font-size:13px;font-weight:600;margin-bottom:10px;display:flex;
+  align-items:center;gap:7px}
+
+/* SETTINGS OVERLAY */
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:200}
+.overlay.open{display:block}
+.drawer{position:fixed;top:0;right:0;width:min(440px,100vw);height:100vh;
+  background:var(--bg2);border-left:1px solid var(--b);overflow-y:auto;
+  padding:22px 20px;z-index:201;transform:translateX(100%);transition:transform .22s ease}
+.drawer.open{transform:translateX(0)}
+.drawer-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:22px}
+.drawer-title{font-size:16px;font-weight:700}
+.section-sep{font-size:11px;font-weight:600;color:var(--tx3);text-transform:uppercase;
+  letter-spacing:.07em;margin:18px 0 10px}
+
+/* SPINNER */
+.spin{display:inline-block;width:12px;height:12px;border:2px solid rgba(255,255,255,.2);
+  border-top-color:currentColor;border-radius:50%;animation:sp .7s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+
+/* LOG BOX */
+.log-box{background:var(--bg3);border:1px solid var(--b);border-radius:var(--rs);
+  padding:11px 13px;font-family:'SF Mono',monospace;font-size:11px;color:var(--tx2);
+  max-height:180px;overflow-y:auto;line-height:1.85;margin-top:10px}
+.log-ok{color:var(--gr)}.log-err{color:var(--rd)}.log-warn{color:var(--am)}.log-info{color:var(--ac)}
+
+/* MOBILE */
+@media(max-width:640px){
+  .topbar{padding:10px 14px}
+  .tabs{padding:0 14px}
+  .main{padding:16px 14px}
+  .metrics{grid-template-columns:repeat(2,1fr)}
+  .grid2{grid-template-columns:1fr}
+  table th:nth-child(n+4),table td:nth-child(n+4){display:none}
+  .topbar-mid .mode-badge span.mode-text{display:none}
+}
+::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar-thumb{background:var(--b2);border-radius:4px}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="logo">TRS <span>Email</span> Validator</div>
+  <div class="topbar-mid">
+    <div class="mode-badge browser-mode" id="modeBadge">
+      <div class="dot"></div>
+      <span class="mode-text" id="modeText">Browser mode</span>
+    </div>
+  </div>
+  <div class="topbar-right">
+    <button class="icon-btn" id="settingsBtn" onclick="openSettings()">
+      <svg width="13" height="13" viewBox="0 0 14 14" fill="none">
+        <circle cx="7" cy="7" r="2" stroke="currentColor" stroke-width="1.2"/>
+        <path d="M7 1v1.2M7 11.8V13M1 7h1.2M11.8 7H13M2.9 2.9l.85.85M10.25 10.25l.85.85M11.1 2.9l-.85.85M3.75 10.25l-.85.85"
+          stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
+      </svg>
+      Settings
+    </button>
+  </div>
+</div>
+
+<div class="tabs">
+  <button class="tab active" id="tab-validate" onclick="switchTab('validate')">Validate</button>
+  <button class="tab" id="tab-report" onclick="switchTab('report')">Report</button>
+  <button class="tab" id="tab-odoo" onclick="switchTab('odoo')">Odoo Actions</button>
+</div>
+
+<div class="main">
+
+<!-- ═══ VALIDATE ═══════════════════════════════════════════════════════════ -->
+<div id="sec-validate" class="section active">
+  <div id="browserModeNotice" class="notice warn">
+    <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1l6 11H1z" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/><path d="M7 6v3M7 10.5v.01" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+    <span><strong>Browser mode</strong> — syntax, typo, and disposable checks only. For full MX validation and Odoo integration, click <strong>Settings → Download Backend</strong> and run <code style="background:rgba(0,0,0,.25);padding:1px 5px;border-radius:3px">python backend.py</code>.</span>
+  </div>
+  <div id="fullModeNotice" class="notice success" style="display:none">
+    <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="6" stroke="currentColor" stroke-width="1.2"/><path d="M4.5 7l2 2 3-3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <span><strong>Full mode</strong> — MX validation active. Odoo integration available in the Odoo Actions tab.</span>
+  </div>
+
+  <div class="card">
+    <div class="clabel">Upload or paste your email list</div>
+    <div class="dropzone" id="dropzone" ondragover="dzo(event)" ondragleave="dzl()" ondrop="dzd(event)">
+      <input type="file" accept=".csv,.xlsx,.xls,.txt" onchange="handleFile(event)">
+      <div class="dz-icon">📂</div>
+      <div class="dz-title" id="dzTitle">Click to choose file, or drag &amp; drop</div>
+      <div class="dz-sub">Accepts .csv · .xlsx · .txt — scans every column for email addresses</div>
+    </div>
+    <div class="or-row">or paste emails directly</div>
+    <textarea id="pasteBox"
+      placeholder="john@example.com&#10;jane@company.net&#10;&#10;Comma, semicolon, or one per line — all work."
+      oninput="onPaste()"></textarea>
+    <div class="btn-row" style="justify-content:space-between">
+      <span id="countLbl" style="font-size:12px;color:var(--tx2)"></span>
+      <div style="display:flex;gap:8px">
+        <button class="btn" onclick="clearAll()">Clear</button>
+        <button class="btn primary" id="valBtn" onclick="runValidation()">Validate</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" id="progCard" style="display:none">
+    <div class="prog-meta">
+      <span id="progLbl">Validating...</span>
+      <span id="progPct">0%</span>
+    </div>
+    <div class="prog-wrap"><div class="prog-fill" id="progFill" style="width:0%"></div></div>
+    <div style="font-size:11px;color:var(--tx2);margin-top:5px" id="progSub"></div>
+  </div>
+</div>
+
+<!-- ═══ REPORT ══════════════════════════════════════════════════════════════ -->
+<div id="sec-report" class="section">
+  <div id="reportEmpty" class="empty">
+    <div style="font-size:32px;margin-bottom:10px">📋</div>
+    <p style="color:var(--tx2);margin-bottom:16px">No results yet — run validation first.</p>
+    <button class="btn primary" onclick="switchTab('validate')">Go validate</button>
+  </div>
+  <div id="reportContent" style="display:none">
+    <div class="metrics">
+      <div class="metric v"><span class="mv" id="m-v">0</span><span class="ml">Valid</span></div>
+      <div class="metric i"><span class="mv" id="m-i">0</span><span class="ml">Invalid</span></div>
+      <div class="metric k"><span class="mv" id="m-k">0</span><span class="ml">Risky</span></div>
+      <div class="metric"><span class="mv" id="m-t">0</span><span class="ml">Total</span></div>
+    </div>
+    <div class="card" style="padding:15px 18px">
+      <div class="export-row">
+        <div class="pills" style="flex:1">
+          <button class="pill active" onclick="setFilter('all',this)">All</button>
+          <button class="pill" onclick="setFilter('valid',this)">Valid</button>
+          <button class="pill" onclick="setFilter('invalid',this)">Invalid</button>
+          <button class="pill" onclick="setFilter('risky',this)">Risky</button>
+        </div>
+        <button class="btn sm" onclick="doExport('all')">Export All</button>
+        <button class="btn sm" onclick="doExport('valid')"
+          style="border-color:rgba(34,201,138,.4);color:var(--gr)">✓ Valid</button>
+        <button class="btn sm" onclick="doExport('invalid')"
+          style="border-color:rgba(255,77,106,.4);color:var(--rd)">✗ Invalid</button>
+      </div>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr>
+            <th>Email</th><th>Status</th>
+            <th title="No common typos detected">No Typo</th>
+            <th title="Not a disposable provider">Not Disposable</th>
+            <th title="Domain has MX records (backend required)">Has MX</th>
+            <th>Reason</th>
+          </tr></thead>
+          <tbody id="tbody"></tbody>
+        </table>
+      </div>
+      <div class="empty" id="emptyFilter" style="display:none">No results for this filter.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ ODOO ACTIONS ════════════════════════════════════════════════════════ -->
+<div id="sec-odoo" class="section">
+  <div class="notice warn" id="odooNeedBackend" style="display:none">
+    <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1l6 11H1z" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/><path d="M7 6v3M7 10.5v.01" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+    <span>Odoo integration requires the local backend. <button onclick="openSettings()" style="background:none;border:none;color:var(--am);cursor:pointer;font-weight:600;text-decoration:underline;font-size:12px">Open Settings →</button></span>
+  </div>
+  <div class="notice warn" id="odooNeedResults" style="display:none">
+    <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="6" stroke="currentColor" stroke-width="1.2"/><path d="M7 6v4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+    <span>No validation results yet. Run validation first, then come back here.</span>
+  </div>
+  <div class="notice info" id="odooNeedCreds" style="display:none">
+    <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="6" stroke="currentColor" stroke-width="1.2"/><path d="M7 6v4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+    <span>Odoo credentials not configured. <button onclick="openSettings()" style="background:none;border:none;color:#7fa3ff;cursor:pointer;font-weight:600;text-decoration:underline;font-size:12px">Open Settings →</button></span>
+  </div>
+
+  <div id="odooActions">
+    <!-- INVALID: LOG NOTE -->
+    <div class="action-card">
+      <div class="action-title">
+        <span style="color:var(--rd)">✗</span> Invalid emails — log note on contact
+      </div>
+      <div class="field">
+        <div class="label">Note to post on chatter <span>(editable)</span></div>
+        <textarea id="invalidNote" style="min-height:60px">Email address is invalid — please find and update with a valid contact email.</textarea>
+      </div>
+      <div class="field">
+        <div class="label">Also move CRM lead to stage <span>(optional)</span></div>
+        <select id="invalidStage"><option value="">— Do not change stage —</option></select>
+      </div>
+      <div class="btn-row">
+        <button class="btn danger" onclick="logInvalidNotes()" id="logNoteBtn">
+          Log note on <span id="cntInvalid">0</span> invalid contacts
+        </button>
+        <button class="btn sm" onclick="clearActivities('invalid')" id="clearActBtn">
+          Clear activities only
+        </button>
+      </div>
+    </div>
+
+    <!-- VALID: SCHEDULE ACTIVITY -->
+    <div class="action-card">
+      <div class="action-title">
+        <span style="color:var(--gr)">✓</span> Valid emails — schedule follow-up activity
+      </div>
+      <div class="grid2">
+        <div class="field">
+          <div class="label">Assign to user</div>
+          <select id="actUser"><option value="">— pull from Odoo —</option></select>
+        </div>
+        <div class="field">
+          <div class="label">Activity type</div>
+          <select id="actType"><option value="">— pull from Odoo —</option></select>
+        </div>
+        <div class="field">
+          <div class="label">Due date</div>
+          <input type="date" id="actDate">
+        </div>
+        <div class="field">
+          <div class="label">Note <span>(optional)</span></div>
+          <input type="text" id="actNote" placeholder="e.g. Email verified — follow up">
+        </div>
+      </div>
+      <div class="btn-row">
+        <button class="btn primary" onclick="scheduleActivities()" id="scheduleBtn">
+          Schedule for <span id="cntValid">0</span> valid contacts
+        </button>
+      </div>
+    </div>
+
+    <div style="font-size:11px;font-weight:600;color:var(--tx3);text-transform:uppercase;
+      letter-spacing:.07em;margin-bottom:8px">Action log</div>
+    <div class="log-box" id="odooLog">Actions will appear here.</div>
+  </div>
+</div>
+
+</div><!-- /main -->
+
+<!-- ═══ SETTINGS DRAWER ══════════════════════════════════════════════════════ -->
+<div class="overlay" id="overlay" onclick="closeSettings()"></div>
+<div class="drawer" id="drawer">
+  <div class="drawer-head">
+    <div class="drawer-title">Settings</div>
+    <button class="btn sm" onclick="closeSettings()">Done</button>
+  </div>
+
+  <!-- BACKEND -->
+  <div class="section-sep">Local backend</div>
+  <div id="backendStatus" class="notice warn">
+    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style="flex-shrink:0"><path d="M7 1l6 11H1z" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/><path d="M7 6v3M7 10.5v.01" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+    <span id="backendStatusText">Not detected. Download and run to unlock MX validation and Odoo integration.</span>
+  </div>
+  <div style="display:flex;gap:8px;margin-bottom:6px">
+    <button class="btn primary sm" onclick="downloadBackend()" style="flex:1">
+      ⬇ Download backend.py
+    </button>
+    <button class="btn sm" onclick="checkBackend(true)" style="flex:1">
+      ↺ Check connection
+    </button>
+  </div>
+  <div class="field-note" style="margin-bottom:14px">
+    After downloading: <code style="background:var(--bg3);padding:1px 6px;border-radius:3px;font-size:11px">python backend.py</code> — keep that terminal open while using this tool.
+  </div>
+
+  <!-- ODOO CREDENTIALS -->
+  <div class="section-sep">Odoo credentials</div>
+  <div class="field">
+    <div class="label">Odoo URL</div>
+    <input type="url" id="sUrl" placeholder="https://yourcompany.odoo.com"
+      oninput="credChanged()">
+  </div>
+  <div class="field">
+    <div class="label">Database name</div>
+    <input type="text" id="sDb" placeholder="yourcompany"
+      oninput="credChanged()">
+    <div class="field-note">Usually the subdomain of your Odoo URL</div>
+  </div>
+  <div class="field">
+    <div class="label">Username (email)</div>
+    <input type="text" id="sUser" placeholder="you@company.com"
+      oninput="credChanged()">
+  </div>
+  <div class="field">
+    <div class="label">API Key</div>
+    <input type="password" id="sKey" placeholder="••••••••••••••••"
+      oninput="credChanged()">
+    <div class="field-note">Settings → Users → Your profile → Account Security → API Keys</div>
+  </div>
+  <div style="display:flex;gap:8px;margin-top:4px">
+    <button class="btn primary sm" onclick="testOdoo()" id="testOdooBtn" style="flex:1">
+      Test &amp; connect Odoo
+    </button>
+    <button class="btn sm danger" onclick="clearOdooCreds()">Clear</button>
+  </div>
+  <div id="odooTestResult" style="margin-top:10px;font-size:12px;display:none;
+    line-height:1.6;padding:10px 12px;border-radius:var(--rs);border:1px solid var(--b)"></div>
+
+  <div style="height:24px"></div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════════════════════════════════════
+const BACKEND = 'http://localhost:7842';
+const S = {
+  backendOnline: false,
+  results: [],
+  filter: 'all',
+  allEmails: [],
+  odoo: { uid: null, users: [], stages: [], actTypes: [] },
+  cfg: { url:'', db:'', user:'', key:'' }
+};
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════════════════════════════════
+window.onload = () => {
+  loadCfg();
+  checkBackend(false);
+  document.getElementById('actDate').value = new Date().toISOString().split('T')[0];
+};
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// BACKEND CHECK
+// ═══════════════════════════════════════════════════════════════════════════════
+async function checkBackend(manual) {
+  try {
+    const r = await fetch(`${BACKEND}/ping`, {signal: AbortSignal.timeout(2500)});
+    const d = await r.json();
+    S.backendOnline = true;
+    setMode('full');
+    // Update settings drawer status
+    const bs = document.getElementById('backendStatus');
+    bs.className = 'notice success';
+    document.getElementById('backendStatusText').innerHTML =
+      `✓ Connected on port 7842 — DNS/MX: ${d.dns ? 'active' : 'unavailable (install dnspython)'}`;
+    return true;
+  } catch(e) {
+    S.backendOnline = false;
+    setMode('browser');
+    const bs = document.getElementById('backendStatus');
+    bs.className = 'notice warn';
+    document.getElementById('backendStatusText').textContent =
+      'Not detected. Download and run to unlock MX validation and Odoo integration.';
+    if (manual) alert('Cannot reach backend on port 7842.\n\nMake sure backend.py is running:\n  python backend.py');
+    return false;
+  }
+}
+
+function setMode(mode) {
+  const badge = document.getElementById('modeBadge');
+  const text  = document.getElementById('modeText');
+  const bNotice = document.getElementById('browserModeNotice');
+  const fNotice = document.getElementById('fullModeNotice');
+  if (mode === 'full') {
+    badge.className = 'mode-badge full-mode';
+    text.textContent = 'Full mode — MX + Odoo';
+    bNotice.style.display = 'none';
+    fNotice.style.display = 'flex';
+  } else {
+    badge.className = 'mode-badge browser-mode';
+    text.textContent = 'Browser mode';
+    bNotice.style.display = 'flex';
+    fNotice.style.display = 'none';
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// SETTINGS
+// ═══════════════════════════════════════════════════════════════════════════════
+function loadCfg() {
+  try {
+    const saved = JSON.parse(localStorage.getItem('trs_cfg') || '{}');
+    Object.assign(S.cfg, saved);
+    document.getElementById('sUrl').value  = S.cfg.url  || '';
+    document.getElementById('sDb').value   = S.cfg.db   || '';
+    document.getElementById('sUser').value = S.cfg.user || '';
+    document.getElementById('sKey').value  = S.cfg.key  || '';
+  } catch(e) {}
+}
+
+function saveCfg() {
+  S.cfg.url  = document.getElementById('sUrl').value.trim().replace(/\/$/,'');
+  S.cfg.db   = document.getElementById('sDb').value.trim();
+  S.cfg.user = document.getElementById('sUser').value.trim();
+  S.cfg.key  = document.getElementById('sKey').value.trim();
+  localStorage.setItem('trs_cfg', JSON.stringify(S.cfg));
+}
+
+function credChanged() {
+  // Reset test result when creds change
+  document.getElementById('odooTestResult').style.display = 'none';
+  ['sUrl','sDb','sUser','sKey'].forEach(id => {
+    document.getElementById(id).className = '';
+  });
+}
+
+function clearOdooCreds() {
+  ['sUrl','sDb','sUser','sKey'].forEach(id => document.getElementById(id).value = '');
+  S.cfg = {url:'',db:'',user:'',key:''};
+  localStorage.removeItem('trs_cfg');
+  document.getElementById('odooTestResult').style.display = 'none';
+  S.odoo.uid = null;
+}
+
+function openSettings() {
+  document.getElementById('overlay').classList.add('open');
+  document.getElementById('drawer').classList.add('open');
+  checkBackend(false);
+}
+function closeSettings() {
+  saveCfg();
+  document.getElementById('overlay').classList.remove('open');
+  document.getElementById('drawer').classList.remove('open');
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// DOWNLOAD BACKEND
+// ═══════════════════════════════════════════════════════════════════════════════
+function downloadBackend() {
+  // Fetch backend.py from same origin (GitHub Pages / Vercel serves it)
+  const a = document.createElement('a');
+  a.href = 'backend.py';
+  a.download = 'backend.py';
+  a.click();
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// ODOO TEST & CONNECT
+// ═══════════════════════════════════════════════════════════════════════════════
+async function testOdoo() {
+  saveCfg();
+  if (!S.backendOnline) {
+    alert('Backend not running. Start backend.py first.');
+    return;
+  }
+  if (!S.cfg.url || !S.cfg.db || !S.cfg.user || !S.cfg.key) {
+    alert('Fill in all four Odoo fields first.');
+    return;
+  }
+  const btn = document.getElementById('testOdooBtn');
+  const res = document.getElementById('odooTestResult');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spin"></span> Connecting...';
+  res.style.display = 'none';
+
+  try {
+    // Authenticate
+    const authResp = await odooCall('/web/session/authenticate', {
+      db: S.cfg.db, login: S.cfg.user, password: S.cfg.key
+    });
+    if (!authResp?.uid) throw new Error('Login failed — check credentials and DB name');
+    S.odoo.uid = authResp.uid;
+
+    // Validate fields visually
+    ['sUrl','sDb','sUser','sKey'].forEach(id =>
+      document.getElementById(id).className = 'valid-field');
+
+    // Pull live data
+    await loadOdooData();
+
+    res.style.display = 'block';
+    res.style.background = 'var(--gr2)';
+    res.style.color = 'var(--gr)';
+    res.style.border = '1px solid rgba(34,201,138,.25)';
+    res.innerHTML = `✓ Connected as <strong>${S.cfg.user}</strong><br>
+      Loaded ${S.odoo.users.length} users · ${S.odoo.stages.length} CRM stages · ${S.odoo.actTypes.length} activity types`;
+  } catch(e) {
+    ['sUrl','sDb','sUser','sKey'].forEach(id =>
+      document.getElementById(id).className = 'invalid-field');
+    res.style.display = 'block';
+    res.style.background = 'var(--rd2)';
+    res.style.color = 'var(--rd)';
+    res.style.border = '1px solid rgba(255,77,106,.25)';
+    res.textContent = '✗ ' + e.message;
+  }
+  btn.disabled = false;
+  btn.textContent = 'Test & connect Odoo';
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// ODOO API
+// ═══════════════════════════════════════════════════════════════════════════════
+async function odooCall(path, params) {
+  const resp = await fetch(`${BACKEND}/odoo${path}`, {
+    method: 'POST',
+    headers: {'Content-Type':'application/json','X-Odoo-URL': S.cfg.url},
+    body: JSON.stringify({jsonrpc:'2.0', method:'call', id: Math.random(), params})
+  });
+  const data = await resp.json();
+  if (data.error) throw new Error(data.error.data?.message || data.error.message || JSON.stringify(data.error));
+  return data.result;
+}
+
+async function odooRead(model, domain, fields, limit=200) {
+  return odooCall('/web/dataset/call_kw', {model, method:'search_read', args:[domain], kwargs:{fields, limit}});
+}
+async function odooCreate(model, vals) {
+  return odooCall('/web/dataset/call_kw', {model, method:'create', args:[vals], kwargs:{}});
+}
+async function odooWrite(model, ids, vals) {
+  return odooCall('/web/dataset/call_kw', {model, method:'write', args:[ids,vals], kwargs:{}});
+}
+async function odooExec(model, method, args, kwargs={}) {
+  return odooCall('/web/dataset/call_kw', {model, method, args, kwargs});
+}
+
+async function loadOdooData() {
+  const [users, stages, actTypes] = await Promise.all([
+    odooRead('res.users',[['active','=',true],['share','=',false]],['id','name','login'],100),
+    odooRead('crm.stage',[],['id','name','sequence'],100),
+    odooRead('mail.activity.type',[],['id','name'],50)
+  ]);
+  S.odoo.users    = users    || [];
+  S.odoo.stages   = (stages  || []).sort((a,b) => a.sequence - b.sequence);
+  S.odoo.actTypes = actTypes || [];
+  populateOdooDropdowns();
+}
+
+function populateOdooDropdowns() {
+  const sel = (id, items, fn) => {
+    const el = document.getElementById(id);
+    const cur = el.value;
+    el.innerHTML = (id === 'actUser' || id === 'actType'
+      ? '<option value="">— select —</option>'
+      : '<option value="">— Do not change stage —</option>') +
+      items.map(i => `<option value="${i.id}">${fn(i)}</option>`).join('');
+    if (cur) el.value = cur;
+  };
+  sel('actUser',    S.odoo.users,    u => `${u.name} (${u.login})`);
+  sel('actType',    S.odoo.actTypes, t => t.name);
+  sel('invalidStage', S.odoo.stages, s => s.name);
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// TABS
+// ═══════════════════════════════════════════════════════════════════════════════
+function switchTab(t) {
+  ['validate','report','odoo'].forEach(id => {
+    document.getElementById(`tab-${id}`).classList.toggle('active', id===t);
+    document.getElementById(`sec-${id}`).classList.toggle('active', id===t);
+  });
+  if (t === 'odoo') refreshOdooUI();
+}
+
+function refreshOdooUI() {
+  const noBackend = !S.backendOnline;
+  const noResults = S.results.length === 0;
+  const noCreds   = !S.cfg.url || !S.cfg.key;
+
+  document.getElementById('odooNeedBackend').style.display = noBackend ? 'flex' : 'none';
+  document.getElementById('odooNeedResults').style.display = (!noBackend && noResults) ? 'flex' : 'none';
+  document.getElementById('odooNeedCreds').style.display   = (!noBackend && !noResults && noCreds) ? 'flex' : 'none';
+  document.getElementById('odooActions').style.display     = 'block';
+
+  const inv = S.results.filter(r => getStatus(r) === 'invalid').length;
+  const val = S.results.filter(r => getStatus(r) === 'valid').length;
+  document.getElementById('cntInvalid').textContent = inv;
+  document.getElementById('cntValid').textContent   = val;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// FILE UPLOAD
+// ═══════════════════════════════════════════════════════════════════════════════
+function dzo(e){e.preventDefault();document.getElementById('dropzone').classList.add('drag')}
+function dzl(){document.getElementById('dropzone').classList.remove('drag')}
+function dzd(e){e.preventDefault();dzl();const f=e.dataTransfer.files[0];if(f)handleUpload(f)}
+function handleFile(e){const f=e.target.files[0];if(f)handleUpload(f);e.target.value=''}
+
+async function handleUpload(file) {
+  const title = document.getElementById('dzTitle');
+  title.textContent = 'Reading ' + file.name + '...';
+  if (S.backendOnline) {
+    const fd = new FormData(); fd.append('file', file);
+    try {
+      const r = await fetch(`${BACKEND}/upload`, {method:'POST', body:fd});
+      const d = await r.json();
+      if (d.error) { alert('Error: ' + d.error); title.textContent='Click to choose file, or drag & drop'; return; }
+      S.allEmails = d.emails;
+      title.innerHTML = `<strong style="color:var(--gr)">✓ ${d.count} emails found in ${file.name}</strong>`;
+      document.getElementById('pasteBox').value = d.emails.join('\n');
+      document.getElementById('countLbl').textContent = d.count + ' emails ready';
+    } catch(e) {
+      alert('Upload failed: ' + e.message);
+      title.textContent = 'Click to choose file, or drag & drop';
+    }
+  } else {
+    // Browser-only: read file client-side
+    const reader = new FileReader();
+    reader.onload = evt => {
+      const emails = extractEmails(evt.target.result);
+      S.allEmails = emails;
+      title.innerHTML = `<strong style="color:var(--gr)">✓ ${emails.length} emails found in ${file.name}</strong>`;
+      document.getElementById('pasteBox').value = emails.join('\n');
+      document.getElementById('countLbl').textContent = emails.length + ' emails ready';
+    };
+    reader.readAsText(file);
+  }
+}
+
+function extractEmails(text) {
+  const found = text.match(/[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}/g) || [];
+  return [...new Set(found.map(e => e.toLowerCase().trim()))];
+}
+
+function onPaste() {
+  S.allEmails = extractEmails(document.getElementById('pasteBox').value);
+  document.getElementById('countLbl').textContent =
+    S.allEmails.length ? S.allEmails.length + ' emails detected' : '';
+}
+
+function clearAll() {
+  document.getElementById('pasteBox').value = '';
+  document.getElementById('countLbl').textContent = '';
+  document.getElementById('dzTitle').textContent = 'Click to choose file, or drag & drop';
+  S.allEmails = []; S.results = [];
+  document.getElementById('reportContent').style.display = 'none';
+  document.getElementById('reportEmpty').style.display   = 'block';
+  document.getElementById('progCard').style.display      = 'none';
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// VALIDATION
+// ═══════════════════════════════════════════════════════════════════════════════
+// Browser-only validation (no MX)
+const DISPOSABLE_BROWSER = new Set([
+  "mailinator.com","guerrillamail.com","tempmail.com","throwam.com","yopmail.com",
+  "sharklasers.com","10minutemail.com","trashmail.com","fakeinbox.com","maildrop.cc",
+  "dispostable.com","spam4.me","getairmail.com","discard.email","tempr.email",
+  "temp-mail.org","tempinbox.com","tempail.com","temporary-mail.net","tmailinator.com",
+]);
+const TYPO_BROWSER = {
+  "gmial.com":"gmail.com","gmal.com":"gmail.com","gamil.com":"gmail.com",
+  "gnail.com":"gmail.com","gmail.co":"gmail.com","gmail.ocm":"gmail.com",
+  "yaho.com":"yahoo.com","yhoo.com":"yahoo.com","hotmial.com":"hotmail.com",
+  "hotmai.com":"hotmail.com","hotmil.com":"hotmail.com","outlok.com":"outlook.com",
+  "outllook.com":"outlook.com","iclod.com":"icloud.com","icoud.com":"icloud.com",
+};
+const EMAIL_RE = /^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$/;
+
+function validateBrowser(email) {
+  email = email.toLowerCase().trim();
+  const out = {email, valid:false, no_typo:true, not_disposable:true,
+    has_mx:null, fail_reason:'', typo_suggestion:null, mx_checked:false};
+  if (!EMAIL_RE.test(email)) { out.fail_reason = 'Invalid syntax'; return out; }
+  const [local, domain] = email.split('@');
+  if (domain in TYPO_BROWSER) {
+    const sug = `${local}@${TYPO_BROWSER[domain]}`;
+    out.no_typo = false; out.typo_suggestion = sug;
+    out.fail_reason = `Possible typo — did you mean ${sug}?`; return out;
+  }
+  if (DISPOSABLE_BROWSER.has(domain)) {
+    out.not_disposable = false;
+    out.fail_reason = 'Disposable/temporary email provider'; return out;
+  }
+  out.valid = true; return out;
+}
+
+async function runValidation() {
+  const emails = S.allEmails.length
+    ? S.allEmails
+    : extractEmails(document.getElementById('pasteBox').value);
+  if (!emails.length) {
+    alert('No email addresses found.\nUpload a file or paste emails below.'); return;
+  }
+  S.allEmails = emails; S.results = [];
+  document.getElementById('valBtn').disabled    = true;
+  document.getElementById('progCard').style.display = 'block';
+  document.getElementById('reportContent').style.display = 'none';
+  document.getElementById('reportEmpty').style.display   = 'none';
+  document.getElementById('progFill').style.width = '0%';
+  document.getElementById('progPct').textContent  = '0%';
+  document.getElementById('progLbl').textContent  = `Validating ${emails.length} emails...`;
+
+  if (S.backendOnline) {
+    // Full backend validation in batches
+    const BATCH = 50; let done = 0;
+    for (let i = 0; i < emails.length; i += BATCH) {
+      const batch = emails.slice(i, i + BATCH);
+      document.getElementById('progSub').textContent =
+        `Checking ${i+1}–${Math.min(i+BATCH,emails.length)} of ${emails.length} (MX DNS active)...`;
+      try {
+        const r = await fetch(`${BACKEND}/validate`, {
+          method:'POST', headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({emails: batch}), signal: AbortSignal.timeout(60000)
+        });
+        const d = await r.json();
+        S.results.push(...(d.results || []));
+      } catch(e) {
+        batch.forEach(em => S.results.push({email:em,valid:false,no_typo:true,
+          not_disposable:true,has_mx:false,fail_reason:'Error: '+e.message}));
+      }
+      done += batch.length;
+      const pct = Math.round((done/emails.length)*100);
+      document.getElementById('progFill').style.width = pct+'%';
+      document.getElementById('progPct').textContent  = pct+'%';
+    }
+  } else {
+    // Browser-only validation
+    document.getElementById('progSub').textContent = 'Running browser checks (no MX lookup)...';
+    for (let i = 0; i < emails.length; i++) {
+      S.results.push(validateBrowser(emails[i]));
+      if (i % 50 === 0) {
+        const pct = Math.round((i/emails.length)*100);
+        document.getElementById('progFill').style.width = pct+'%';
+        document.getElementById('progPct').textContent  = pct+'%';
+        await new Promise(r => setTimeout(r,0));
+      }
+    }
+  }
+
+  document.getElementById('progFill').style.width = '100%';
+  document.getElementById('progPct').textContent  = '100%';
+  document.getElementById('progLbl').textContent  = `Done — ${emails.length} emails checked`;
+  document.getElementById('progSub').textContent  = '';
+  document.getElementById('valBtn').disabled       = false;
+  renderResults();
+  switchTab('report');
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// REPORT
+// ═══════════════════════════════════════════════════════════════════════════════
+function getStatus(r) {
+  if (!r.valid) return 'invalid';
+  if (!r.no_typo || !r.not_disposable) return 'risky';
+  return 'valid';
+}
+
+function renderResults() {
+  const v   = S.results.filter(r => getStatus(r)==='valid').length;
+  const inv = S.results.filter(r => getStatus(r)==='invalid').length;
+  const k   = S.results.filter(r => getStatus(r)==='risky').length;
+  document.getElementById('m-v').textContent = v;
+  document.getElementById('m-i').textContent = inv;
+  document.getElementById('m-k').textContent = k;
+  document.getElementById('m-t').textContent = S.results.length;
+  document.getElementById('reportEmpty').style.display   = 'none';
+  document.getElementById('reportContent').style.display = 'block';
+  renderTable();
+}
+
+function setFilter(f, btn) {
+  S.filter = f;
+  document.querySelectorAll('.pill').forEach(p => p.classList.remove('active'));
+  btn.classList.add('active');
+  renderTable();
+}
+
+function ck(v) {
+  if (v === true)  return '<span class="ck y">✓</span>';
+  if (v === false) return '<span class="ck n">✗</span>';
+  return '<span class="ck u">—</span>';
+}
+
+function renderTable() {
+  const rows = S.filter === 'all' ? S.results
+    : S.results.filter(r => getStatus(r) === S.filter);
+  const tbody = document.getElementById('tbody');
+  const empty = document.getElementById('emptyFilter');
+  if (!rows.length) { tbody.innerHTML=''; empty.style.display='block'; return; }
+  empty.style.display = 'none';
+  tbody.innerHTML = rows.map(r => {
+    const st  = getStatus(r);
+    const sug = r.typo_suggestion
+      ? `<br><span style="color:var(--am);font-size:10px;font-family:'SF Mono',monospace">→ ${r.typo_suggestion}</span>` : '';
+    const mxCell = r.mx_checked === false ? ck(null) : ck(r.has_mx);
+    return `<tr>
+      <td class="em" title="${r.email}">${r.email}</td>
+      <td><span class="badge ${st}">${st}</span></td>
+      <td>${ck(r.no_typo)}</td>
+      <td>${ck(r.not_disposable)}</td>
+      <td>${mxCell}</td>
+      <td style="font-size:12px;color:var(--tx2);line-height:1.5">
+        ${r.fail_reason||(st==='valid'?'All checks passed':'—')}${sug}</td>
+    </tr>`;
+  }).join('');
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// EXPORT
+// ═══════════════════════════════════════════════════════════════════════════════
+function doExport(filter) {
+  const rows = filter==='all' ? S.results : S.results.filter(r=>getStatus(r)===filter);
+  if (!rows.length) { alert('No results for this filter.'); return; }
+  const hdr = ['Email','Status','No Typo','Not Disposable','Has MX','Fail Reason','Typo Suggestion'];
+  const lines = [hdr.join(',')];
+  rows.forEach(r => lines.push([
+    r.email, getStatus(r),
+    r.no_typo?'TRUE':'FALSE', r.not_disposable?'TRUE':'FALSE',
+    r.has_mx===true?'TRUE':r.has_mx===false?'FALSE':'UNCHECKED',
+    (r.fail_reason||'').replace(/,/g,' '), r.typo_suggestion||''
+  ].map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')));
+  const blob = new Blob([lines.join('\n')],{type:'text/csv'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `trs_emails_${filter}_${new Date().toISOString().slice(0,10)}.csv`;
+  a.click();
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// ODOO ACTIONS
+// ═══════════════════════════════════════════════════════════════════════════════
+async function ensureOdoo() {
+  if (!S.backendOnline) throw new Error('Backend not running');
+  if (!S.cfg.url || !S.cfg.key) throw new Error('Odoo credentials not configured — open Settings');
+  if (!S.odoo.uid) {
+    const r = await odooCall('/web/session/authenticate',
+      {db:S.cfg.db, login:S.cfg.user, password:S.cfg.key});
+    if (!r?.uid) throw new Error('Odoo login failed — check credentials');
+    S.odoo.uid = r.uid;
+    await loadOdooData();
+  }
+}
+
+async function findPartner(email) {
+  const r = await odooRead('res.partner',[['email','=',email]],['id','name','email'],1);
+  return r?.length ? r[0] : null;
+}
+
+async function logInvalidNotes() {
+  try { await ensureOdoo(); } catch(e) { alert(e.message); return; }
+  const note    = document.getElementById('invalidNote').value.trim();
+  const stageId = parseInt(document.getElementById('invalidStage').value) || null;
+  if (!note) { alert('Enter a note to log.'); return; }
+
+  const emails = S.results.filter(r => getStatus(r)==='invalid').map(r=>r.email);
+  if (!emails.length) { odooLog('warn','No invalid emails in results.'); return; }
+  odooLog('info',`Logging notes on ${emails.length} invalid contacts...`);
+
+  let matched=0, notFound=0, errors=0;
+  for (const email of emails) {
+    try {
+      const p = await findPartner(email);
+      if (!p) { odooLog('warn',`Not in Odoo: ${email}`); notFound++; continue; }
+      // Post chatter note
+      await odooExec('res.partner','message_post',[p.id],{
+        body: note, message_type:'comment', subtype_xmlid:'mail.mt_note'
+      });
+      // Cancel open activities
+      const acts = await odooRead('mail.activity',
+        [['res_id','=',p.id],['res_model','=','res.partner']],['id'],50);
+      if (acts?.length) {
+        await odooExec('mail.activity','unlink',[acts.map(a=>a.id)]);
+      }
+      // Move CRM stage
+      if (stageId) {
+        const leads = await odooRead('crm.lead',
+          [['partner_id','=',p.id],['active','=',true]],['id'],10);
+        if (leads?.length) await odooWrite('crm.lead',leads.map(l=>l.id),{stage_id:stageId});
+      }
+      odooLog('ok',`${p.name}: note logged${acts?.length?`, ${acts.length} activities cleared`:''}${stageId?', stage updated':''}`);
+      matched++;
+    } catch(e) { odooLog('err',`${email}: ${e.message}`); errors++; }
+    await new Promise(r=>setTimeout(r,120));
+  }
+  odooLog('info',`Done — ${matched} updated, ${notFound} not in Odoo, ${errors} errors`);
+}
+
+async function scheduleActivities() {
+  try { await ensureOdoo(); } catch(e) { alert(e.message); return; }
+  const userId = parseInt(document.getElementById('actUser').value);
+  const typeId = parseInt(document.getElementById('actType').value);
+  const date   = document.getElementById('actDate').value;
+  const note   = document.getElementById('actNote').value;
+  if (!userId||!typeId||!date) { alert('Select user, activity type, and date first.'); return; }
+
+  const emails = S.results.filter(r=>getStatus(r)==='valid').map(r=>r.email);
+  if (!emails.length) { odooLog('warn','No valid emails in results.'); return; }
+  odooLog('info',`Scheduling activities for ${emails.length} valid contacts...`);
+
+  let matched=0, notFound=0, errors=0;
+  for (const email of emails) {
+    try {
+      const p = await findPartner(email);
+      if (!p) { odooLog('warn',`Not in Odoo: ${email}`); notFound++; continue; }
+      await odooCreate('mail.activity',{
+        res_model:'res.partner', res_id:p.id,
+        activity_type_id:typeId, user_id:userId,
+        date_deadline:date, note:note||''
+      });
+      odooLog('ok',`Activity created: ${p.name} <${email}>`);
+      matched++;
+    } catch(e) { odooLog('err',`${email}: ${e.message}`); errors++; }
+    await new Promise(r=>setTimeout(r,120));
+  }
+  odooLog('info',`Done — ${matched} created, ${notFound} not in Odoo, ${errors} errors`);
+}
+
+async function clearActivities(filter) {
+  try { await ensureOdoo(); } catch(e) { alert(e.message); return; }
+  const emails = S.results.filter(r=>getStatus(r)===filter).map(r=>r.email);
+  if (!emails.length) { odooLog('warn',`No ${filter} emails in results.`); return; }
+  odooLog('info',`Clearing activities for ${emails.length} contacts...`);
+  let cleared=0;
+  for (const email of emails) {
+    try {
+      const p = await findPartner(email);
+      if (!p) continue;
+      const acts = await odooRead('mail.activity',
+        [['res_id','=',p.id],['res_model','=','res.partner']],['id'],50);
+      if (acts?.length) {
+        await odooExec('mail.activity','unlink',[acts.map(a=>a.id)]);
+        cleared += acts.length;
+      }
+    } catch(e) { odooLog('err',`${email}: ${e.message}`); }
+    await new Promise(r=>setTimeout(r,100));
+  }
+  odooLog('info',`Done — ${cleared} activities cleared`);
+}
+
+function odooLog(type, msg) {
+  const box = document.getElementById('odooLog');
+  if (box.textContent === 'Actions will appear here.') box.textContent = '';
+  const cls = {ok:'log-ok',err:'log-err',warn:'log-warn',info:'log-info'}[type]||'';
+  const ts  = new Date().toLocaleTimeString();
+  box.innerHTML += `<span class="${cls}">[${ts}] ${msg}</span>\n`;
+  box.scrollTop = box.scrollHeight;
+}
+</script>
+</body>
+</html>
